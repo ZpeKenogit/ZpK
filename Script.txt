@@ -1,811 +1,935 @@
---========================================================--
---                  ZPEKENO HUB                     --
---========================================================--
+--[[
+    ███████╗██████╗ ███████╗██╗  ██╗███████╗███╗   ██╗ ██████╗ 
+    ╚══███╔╝██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔═══██╗
+      ███╔╝ ██████╔╝█████╗  █████╔╝ █████╗  ██╔██╗ ██║██║   ██║
+     ███╔╝  ██╔═══╝ ██╔══╝  ██╔═██╗ ██╔══╝  ██║╚██╗██║██║   ██║
+    ███████╗██║     ███████╗██║  ██╗███████╗██║ ╚████║╚██████╔╝
+    ╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝ ╚═════╝ 
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+    ZpeKeno — Game Development Hub
+    Better Tools / Bigger Ideas
+    Version: 1.2.0
+    Sea IDs: First / Second / Third
+]]
 
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+--==============================================================
+-- CONFIG
+--==============================================================
+local Config = {}
+Config.Version = "1.2.0"
 
---========================================================--
--- CONFIGURATION
---========================================================--
-
-local Config = {
-    AimAssist = false,
-    AimDistance = 500,
-    Prediction = 25,
-
-    ESP = false,
-    ShowHealth = true,
-    ShowDistance = true,
-
-    Dash = false,
-    DashValue = 20,
-
-    Speed = false,
-    SpeedValue = 16,
-
-    Jump = false,
-    JumpValue = 50
+Config.Settings = {
+    Aimbot = {
+        TargetAssist = false,
+        TargetDistance = { min = 100, max = 1000 },
+        Prediction = 50,
+        TeamFilter = true,
+        Smoothness = 0.15,
+    },
+    Visual = {
+        PlayerOutline = true,
+        HealthPercent = true,
+        Distance = true,
+        ExcludeLocal = true,
+        OutlineColor = Color3.fromRGB(0, 255, 0),
+    },
+    Other = {
+        Dash = 20,
+        DashEnabled = true,
+        MovementSpeed = 16,
+        JumpHeight = 50,
+    },
+    Bypass = {
+        RealSpeed = 50,
+        FakeSpeed = 16,
+        TeleportSteps = 10,
+        TeleportDuration = 0.15,
+    },
 }
 
---========================================================--
--- SCREEN GUI
---========================================================--
+Config.SeaIDs = {
+    First = {
+        name = "First Sea",
+        levels = { min = 1, max = 700 },
+        islands = {
+            ["Starter Island"] = 1, ["Marine Ford"] = 2, ["Shell Town"] = 3,
+            ["Foosha Village"] = 4, ["Orange Town"] = 5, ["Baratie"] = 6,
+            ["Arlong Park"] = 7, ["Loguetown"] = 8, ["Reverse Mountain"] = 9,
+            ["Whiskey Peak"] = 10, ["Little Garden"] = 11, ["Drum Island"] = 12,
+            ["Alabasta"] = 13, ["Jaya"] = 14, ["Skypiea"] = 15,
+            ["Long Ring Long Land"] = 16, ["Water 7"] = 17, ["Enies Lobby"] = 18,
+            ["Thriller Bark"] = 19, ["Sabaody Archipelago"] = 20, ["Amazon Lily"] = 21,
+            ["Impel Down"] = 22, ["Marineford War"] = 23,
+        },
+        mobIDs = {
+            ["Bandit"] = 1, ["Rebel Soldier"] = 2, ["Knife Bandit"] = 3,
+            ["Monkey"] = 4, ["Pirate"] = 5, ["Marine"] = 6,
+            ["Fishman"] = 7, ["Giant"] = 8, ["Zombie"] = 9, ["Vice Admiral"] = 10,
+        },
+    },
+    Second = {
+        name = "Second Sea",
+        levels = { min = 700, max = 1500 },
+        islands = {
+            ["Kingdom of Rose"] = 24, ["Green Zone"] = 25, ["Graveyard"] = 26,
+            ["Snow Mountain"] = 27, ["Ice Castle"] = 28, ["Forgotten Island"] = 29,
+            ["Cursed Ship"] = 30, ["Haunted Castle"] = 31, ["Sea of Treats"] = 32,
+            ["Cake Island"] = 33, ["Candy Island"] = 34, ["Prison"] = 35, ["Marine HQ"] = 36,
+        },
+        mobIDs = {
+            ["Raider"] = 11, ["Mercenary"] = 12, ["Snow Bandit"] = 13,
+            ["Ice Marine"] = 14, ["Ghost"] = 15, ["Candy Pirate"] = 16,
+            ["Cake Guard"] = 17, ["Prison Guard"] = 18, ["Vice Admiral II"] = 19,
+            ["Cursed Captain"] = 20,
+        },
+    },
+    Third = {
+        name = "Third Sea",
+        levels = { min = 1500, max = 2550 },
+        islands = {
+            ["Port Town"] = 37, ["Hydra Island"] = 38, ["Great Tree"] = 39,
+            ["Castle on the Sea"] = 40, ["Floating Turtle"] = 41, ["Haunted Castle III"] = 42,
+            ["Sea of Treats III"] = 43, ["Kingdom of Rose III"] = 44, ["Cursed Ship III"] = 45,
+            ["Ice Castle III"] = 46, ["Forgotten Island III"] = 47, ["Mansion"] = 48,
+            ["Tiki Outpost"] = 49, ["Sea Beast Island"] = 50,
+        },
+        mobIDs = {
+            ["Pirate III"] = 21, ["Sea Beast"] = 22, ["Turtle Soldier"] = 23,
+            ["Castle Guard"] = 24, ["Ghost III"] = 25, ["Candy Pirate III"] = 26,
+            ["Cake Guard III"] = 27, ["Prison Guard III"] = 28, ["Vice Admiral III"] = 29,
+            ["Cursed Captain III"] = 30, ["Tiki Warrior"] = 31, ["Mansion Guard"] = 32,
+        },
+    },
+}
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ZpeKenoHub"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = false
-ScreenGui.Parent = PlayerGui
+--==============================================================
+-- BYPASS
+--==============================================================
+local Bypass = {}
 
---========================================================--
--- MAIN HUB
---========================================================--
-
-local Main = Instance.new("Frame")
-Main.Name = "Main"
-Main.AnchorPoint = Vector2.new(0.5, 0.5)
-Main.Position = UDim2.fromScale(0.5, 0.5)
-Main.Size = UDim2.fromOffset(650, 480)
-Main.BackgroundColor3 = Color3.fromRGB(9, 12, 17)
-Main.BorderSizePixel = 0
-Main.Visible = true
-Main.Parent = ScreenGui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 16)
-MainCorner.Parent = Main
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(100, 170, 255)
-MainStroke.Thickness = 1.5
-MainStroke.Transparency = 0.2
-MainStroke.Parent = Main
-
-local MainScale = Instance.new("UIScale")
-MainScale.Parent = Main
-
---========================================================--
--- RESPONSIVE SYSTEM
---========================================================--
-
-local Camera = workspace.CurrentCamera
-
-local function UpdateScale()
-
-    Camera = workspace.CurrentCamera
-
-    if not Camera then
-        return
-    end
-
-    local Viewport = Camera.ViewportSize
-
-    local ReferenceWidth = 390
-    local ReferenceHeight = 844
-
-    local WidthScale = Viewport.X / ReferenceWidth
-    local HeightScale = Viewport.Y / ReferenceHeight
-
-    local Scale = math.min(WidthScale, HeightScale)
-
-    Scale = math.clamp(Scale, 0.72, 1.0)
-
-    MainScale.Scale = Scale
-end
-
-UpdateScale()
-
-if Camera then
-    Camera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
-end
-
---========================================================--
--- HEADER
---========================================================--
-
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, -30, 0, 70)
-Header.Position = UDim2.fromOffset(15, 10)
-Header.BackgroundTransparency = 1
-Header.Parent = Main
-
-local Logo = Instance.new("TextLabel")
-Logo.Size = UDim2.fromOffset(60, 60)
-Logo.Position = UDim2.fromOffset(0, 0)
-Logo.BackgroundTransparency = 1
-Logo.Text = "Z"
-Logo.TextColor3 = Color3.fromRGB(245, 248, 255)
-Logo.Font = Enum.Font.GothamBlack
-Logo.TextSize = 46
-Logo.Parent = Header
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -80, 0, 35)
-Title.Position = UDim2.fromOffset(65, 3)
-Title.BackgroundTransparency = 1
-Title.Text = "ZpeKeno"
-Title.TextColor3 = Color3.fromRGB(245, 248, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 27
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Header
-
-local Subtitle = Instance.new("TextLabel")
-Subtitle.Size = UDim2.new(1, -80, 0, 22)
-Subtitle.Position = UDim2.fromOffset(67, 38)
-Subtitle.BackgroundTransparency = 1
-Subtitle.Text = "GAME DEVELOPMENT HUB"
-Subtitle.TextColor3 = Color3.fromRGB(110, 125, 145)
-Subtitle.Font = Enum.Font.Gotham
-Subtitle.TextSize = 10
-Subtitle.TextXAlignment = Enum.TextXAlignment.Left
-Subtitle.Parent = Header
-
---========================================================--
--- CLOSE BUTTON
---========================================================--
-
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.fromOffset(35, 35)
-CloseButton.Position = UDim2.new(1, -45, 0, 10)
-CloseButton.BackgroundColor3 = Color3.fromRGB(25, 30, 39)
-CloseButton.Text = "×"
-CloseButton.TextColor3 = Color3.fromRGB(220, 225, 235)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.TextSize = 24
-CloseButton.BorderSizePixel = 0
-CloseButton.Parent = Main
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 8)
-CloseCorner.Parent = CloseButton
-
---========================================================--
--- OPEN BUTTON
---========================================================--
-
-local OpenButton = Instance.new("ImageButton")
-OpenButton.Name = "ZpeKenoOpenButton"
-OpenButton.AnchorPoint = Vector2.new(0, 0)
-OpenButton.Position = UDim2.fromOffset(14, 14)
-OpenButton.Size = UDim2.fromOffset(58, 58)
-OpenButton.BackgroundColor3 = Color3.fromRGB(9, 12, 17)
-OpenButton.BorderSizePixel = 0
-OpenButton.AutoButtonColor = false
-OpenButton.ScaleType = Enum.ScaleType.Fit
-OpenButton.ZIndex = 100
-OpenButton.Parent = ScreenGui
-
--- COLOQUE AQUI O ID DO ASSET DO Z
-OpenButton.Image = "rbxassetid://YOUR_ASSET_ID"
-
-local OpenCorner = Instance.new("UICorner")
-OpenCorner.CornerRadius = UDim.new(0, 13)
-OpenCorner.Parent = OpenButton
-
-local OpenStroke = Instance.new("UIStroke")
-OpenStroke.Color = Color3.fromRGB(100, 170, 255)
-OpenStroke.Thickness = 1.5
-OpenStroke.Transparency = 0.15
-OpenStroke.Parent = OpenButton
-
--- Caso o asset ainda não esteja configurado,
--- mostra um Z temporário.
-local Fallback = Instance.new("TextLabel")
-Fallback.Size = UDim2.fromScale(1, 1)
-Fallback.BackgroundTransparency = 1
-Fallback.Text = "Z"
-Fallback.TextColor3 = Color3.fromRGB(245, 248, 255)
-Fallback.Font = Enum.Font.GothamBlack
-Fallback.TextSize = 38
-Fallback.ZIndex = 101
-Fallback.Parent = OpenButton
-
---========================================================--
--- ANIMATION
---========================================================--
-
-local HubOpen = true
-
-local function OpenHub()
-
-    HubOpen = true
-    Main.Visible = true
-
-    Main.Position = UDim2.fromScale(0.5, 0.53)
-
-    TweenService:Create(
-        Main,
-        TweenInfo.new(
-            0.2,
-            Enum.EasingStyle.Quint,
-            Enum.EasingDirection.Out
-        ),
-        {
-            Position = UDim2.fromScale(0.5, 0.5)
-        }
-    ):Play()
-end
-
-local function CloseHub()
-
-    HubOpen = false
-
-    local Animation = TweenService:Create(
-        Main,
-        TweenInfo.new(
-            0.15,
-            Enum.EasingStyle.Quint,
-            Enum.EasingDirection.In
-        ),
-        {
-            Position = UDim2.fromScale(0.5, 0.53)
-        }
-    )
-
-    Animation:Play()
-
-    Animation.Completed:Connect(function()
-        if not HubOpen then
-            Main.Visible = false
+local function hookNamecall(targetRemote, blockFire)
+    local mt = getrawmetatable(targetRemote)
+    if not mt then return end
+    local old = mt.__namecall
+    if not old then return end
+    setreadonly(mt, false)
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if self == targetRemote and blockFire and (method == "FireServer" or method == "InvokeServer") then
+            return nil
         end
+        return old(self, ...)
     end)
+    setreadonly(mt, true)
 end
 
-OpenButton.MouseButton1Click:Connect(function()
-
-    if HubOpen then
-        CloseHub()
-    else
-        OpenHub()
-    end
-
-end)
-
-CloseButton.MouseButton1Click:Connect(CloseHub)
-
---========================================================--
--- TAB BAR
---========================================================--
-
-local TabBar = Instance.new("Frame")
-TabBar.Size = UDim2.new(1, -30, 0, 48)
-TabBar.Position = UDim2.fromOffset(15, 85)
-TabBar.BackgroundTransparency = 1
-TabBar.Parent = Main
-
-local TabLayout = Instance.new("UIListLayout")
-TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-TabLayout.Padding = UDim.new(0, 8)
-TabLayout.Parent = TabBar
-
---========================================================--
--- CONTENT
---========================================================--
-
-local Content = Instance.new("ScrollingFrame")
-Content.Name = "Content"
-Content.Size = UDim2.new(1, -30, 1, -150)
-Content.Position = UDim2.fromOffset(15, 140)
-Content.BackgroundTransparency = 1
-Content.BorderSizePixel = 0
-Content.ScrollBarThickness = 3
-Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
-Content.CanvasSize = UDim2.new(0, 0, 0, 0)
-Content.Parent = Main
-
-local ContentLayout = Instance.new("UIListLayout")
-ContentLayout.Padding = UDim.new(0, 8)
-ContentLayout.Parent = Content
-
---========================================================--
--- CLEAR CONTENT
---========================================================--
-
-local function ClearContent()
-
-    for _, Object in ipairs(Content:GetChildren()) do
-
-        if not Object:IsA("UIListLayout") then
-            Object:Destroy()
-        end
-
-    end
-
-end
-
---========================================================--
--- SECTION
---========================================================--
-
-local function CreateSection(TitleText, Description)
-
-    local Section = Instance.new("Frame")
-
-    Section.Size = UDim2.new(1, 0, 0, 58)
-    Section.BackgroundColor3 = Color3.fromRGB(15, 19, 26)
-    Section.BorderSizePixel = 0
-    Section.Parent = Content
-
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 9)
-    Corner.Parent = Section
-
-    local Title = Instance.new("TextLabel")
-
-    Title.Size = UDim2.new(1, -20, 0, 25)
-    Title.Position = UDim2.fromOffset(10, 6)
-    Title.BackgroundTransparency = 1
-    Title.Text = TitleText
-    Title.TextColor3 = Color3.fromRGB(240, 245, 255)
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 14
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Parent = Section
-
-    local Desc = Instance.new("TextLabel")
-
-    Desc.Size = UDim2.new(1, -20, 0, 18)
-    Desc.Position = UDim2.fromOffset(10, 32)
-    Desc.BackgroundTransparency = 1
-    Desc.Text = Description
-    Desc.TextColor3 = Color3.fromRGB(110, 125, 145)
-    Desc.Font = Enum.Font.Gotham
-    Desc.TextSize = 9
-    Desc.TextXAlignment = Enum.TextXAlignment.Left
-    Desc.Parent = Section
-
-end
-
---========================================================--
--- TOGGLE
---========================================================--
-
-local function CreateToggle(Text, CurrentValue, Callback)
-
-    local Button = Instance.new("TextButton")
-
-    Button.Size = UDim2.new(1, 0, 0, 48)
-    Button.BackgroundColor3 = Color3.fromRGB(16, 20, 27)
-    Button.BorderSizePixel = 0
-    Button.Text = ""
-    Button.Parent = Content
-
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
-    Corner.Parent = Button
-
-    local Label = Instance.new("TextLabel")
-
-    Label.Size = UDim2.new(1, -80, 1, 0)
-    Label.Position = UDim2.fromOffset(15, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = Text
-    Label.TextColor3 = Color3.fromRGB(225, 230, 240)
-    Label.Font = Enum.Font.GothamMedium
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Button
-
-    local Toggle = Instance.new("Frame")
-
-    Toggle.Size = UDim2.fromOffset(42, 22)
-    Toggle.Position = UDim2.new(1, -57, 0.5, -11)
-    Toggle.BorderSizePixel = 0
-    Toggle.Parent = Button
-
-    local ToggleCorner = Instance.new("UICorner")
-    ToggleCorner.CornerRadius = UDim.new(1, 0)
-    ToggleCorner.Parent = Toggle
-
-    local Dot = Instance.new("Frame")
-
-    Dot.Size = UDim2.fromOffset(16, 16)
-    Dot.BorderSizePixel = 0
-    Dot.Parent = Toggle
-
-    local DotCorner = Instance.new("UICorner")
-    DotCorner.CornerRadius = UDim.new(1, 0)
-    DotCorner.Parent = Dot
-
-    local function Update()
-
-        if CurrentValue then
-
-            Toggle.BackgroundColor3 =
-                Color3.fromRGB(80, 170, 255)
-
-            Dot.BackgroundColor3 =
-                Color3.fromRGB(245, 248, 255)
-
-            Dot.Position =
-                UDim2.new(1, -19, 0.5, -8)
-
-        else
-
-            Toggle.BackgroundColor3 =
-                Color3.fromRGB(55, 65, 78)
-
-            Dot.BackgroundColor3 =
-                Color3.fromRGB(200, 205, 215)
-
-            Dot.Position =
-                UDim2.fromOffset(3, 3)
-
-        end
-
-    end
-
-    Update()
-
-    Button.MouseButton1Click:Connect(function()
-
-        CurrentValue = not CurrentValue
-
-        Update()
-
-        Callback(CurrentValue)
-
-    end)
-
-    return Button
-end
-
---========================================================--
--- SLIDER
---========================================================--
-
-local function CreateSlider(Text, Minimum, Maximum, Current, Callback)
-
-    local Holder = Instance.new("Frame")
-
-    Holder.Size = UDim2.new(1, 0, 0, 72)
-    Holder.BackgroundColor3 = Color3.fromRGB(16, 20, 27)
-    Holder.BorderSizePixel = 0
-    Holder.Parent = Content
-
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
-    Corner.Parent = Holder
-
-    local Label = Instance.new("TextLabel")
-
-    Label.Size = UDim2.new(0.7, 0, 0, 23)
-    Label.Position = UDim2.fromOffset(15, 7)
-    Label.BackgroundTransparency = 1
-    Label.Text = Text
-    Label.TextColor3 = Color3.fromRGB(225, 230, 240)
-    Label.Font = Enum.Font.GothamMedium
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Holder
-
-    local ValueLabel = Instance.new("TextLabel")
-
-    ValueLabel.Size = UDim2.new(0.25, 0, 0, 23)
-    ValueLabel.Position = UDim2.new(0.72, 0, 0, 7)
-    ValueLabel.BackgroundTransparency = 1
-    ValueLabel.Text = tostring(Current)
-    ValueLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
-    ValueLabel.Font = Enum.Font.GothamBold
-    ValueLabel.TextSize = 12
-    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    ValueLabel.Parent = Holder
-
-    local Bar = Instance.new("Frame")
-
-    Bar.Size = UDim2.new(1, -30, 0, 5)
-    Bar.Position = UDim2.fromOffset(15, 47)
-    Bar.BackgroundColor3 = Color3.fromRGB(45, 53, 65)
-    Bar.BorderSizePixel = 0
-    Bar.Parent = Holder
-
-    local BarCorner = Instance.new("UICorner")
-    BarCorner.CornerRadius = UDim.new(1, 0)
-    BarCorner.Parent = Bar
-
-    local Fill = Instance.new("Frame")
-
-    local Percentage =
-        (Current - Minimum) /
-        (Maximum - Minimum)
-
-    Fill.Size = UDim2.new(Percentage, 0, 1, 0)
-    Fill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
-    Fill.BorderSizePixel = 0
-    Fill.Parent = Bar
-
-    local FillCorner = Instance.new("UICorner")
-    FillCorner.CornerRadius = UDim.new(1, 0)
-    FillCorner.Parent = Fill
-
-    local Dragging = false
-
-    local function Update(Input)
-
-        local Position =
-            (Input.Position.X - Bar.AbsolutePosition.X)
-            / Bar.AbsoluteSize.X
-
-        Position = math.clamp(Position, 0, 1)
-
-        local Value =
-            math.floor(
-                Minimum +
-                ((Maximum - Minimum) * Position)
-            )
-
-        Fill.Size =
-            UDim2.new(Position, 0, 1, 0)
-
-        ValueLabel.Text =
-            tostring(Value)
-
-        Callback(Value)
-    end
-
-    Bar.InputBegan:Connect(function(Input)
-
-        if Input.UserInputType ==
-            Enum.UserInputType.MouseButton1
-            or Input.UserInputType ==
-            Enum.UserInputType.Touch then
-
-            Dragging = true
-            Update(Input)
-
-        end
-
-    end)
-
-    UserInputService.InputChanged:Connect(function(Input)
-
-        if not Dragging then
-            return
-        end
-
-        if Input.UserInputType ==
-            Enum.UserInputType.MouseMovement
-            or Input.UserInputType ==
-            Enum.UserInputType.Touch then
-
-            Update(Input)
-
-        end
-
-    end)
-
-    UserInputService.InputEnded:Connect(function(Input)
-
-        if Input.UserInputType ==
-            Enum.UserInputType.MouseButton1
-            or Input.UserInputType ==
-            Enum.UserInputType.Touch then
-
-            Dragging = false
-
-        end
-
-    end)
-
-end
-
---========================================================--
--- AIMBOT / TARGET ASSIST
---========================================================--
-
-local function GetNearestEnemy()
-
-    local Character = LocalPlayer.Character
-
-    if not Character then
-        return nil
-    end
-
-    local Root =
-        Character:FindFirstChild("HumanoidRootPart")
-
-    if not Root then
-        return nil
-    end
-
-    local Nearest = nil
-    local NearestDistance = Config.AimDistance
-
-    for _, Player in ipairs(Players:GetPlayers()) do
-
-        if Player ~= LocalPlayer
-            and Player.Character then
-
-            local EnemyRoot =
-                Player.Character:FindFirstChild(
-                    "HumanoidRootPart"
-                )
-
-            local Humanoid =
-                Player.Character:FindFirstChildOfClass(
-                    "Humanoid"
-                )
-
-            if EnemyRoot
-                and Humanoid
-                and Humanoid.Health > 0 then
-
-                local SameTeam =
-                    LocalPlayer.Team ~= nil
-                    and Player.Team ~= nil
-                    and LocalPlayer.Team == Player.Team
-
-                if not SameTeam then
-
-                    local Distance =
-                        (
-                            Root.Position -
-                            EnemyRoot.Position
-                        ).Magnitude
-
-                    if Distance <= NearestDistance then
-
-                        Nearest = Player
-                        NearestDistance = Distance
-
-                    end
+function Bypass.BlockTelemetry()
+    local blocked = {
+        "SendTelemetry", "LogAction", "AntiCheatReport",
+        "ReportPlayer", "CheckSpeed", "CheckPosition",
+        "VerifyCharacter", "HeartbeatCheck",
+    }
+    for _, remote in pairs(game:GetDescendants()) do
+        if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
+            for _, b in pairs(blocked) do
+                if remote.Name:lower():find(b:lower()) then
+                    pcall(hookNamecall, remote, true)
                 end
             end
         end
     end
-
-    return Nearest
+    print("[Zpekeno] Telemetria bloqueada.")
 end
 
---========================================================--
--- VISUAL / ESP
---========================================================--
+function Bypass.SpeedSpoof(realSpeed, fakeSpeed)
+    realSpeed = realSpeed or 16
+    fakeSpeed = fakeSpeed or 16
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
 
-local ESPObjects = {}
+    local mt = getrawmetatable(game)
+    if not mt then return end
+    local oldIndex = mt.__index
+    local oldNewIndex = mt.__newindex
+    setreadonly(mt, false)
 
-local function RemoveESP(Player)
+    mt.__index = newcclosure(function(self, key)
+        if self == hum and key == "WalkSpeed" then return fakeSpeed end
+        return oldIndex(self, key)
+    end)
+    mt.__newindex = newcclosure(function(self, key, value)
+        if self == hum and key == "WalkSpeed" then
+            oldNewIndex(self, key, realSpeed)
+            return
+        end
+        return oldNewIndex(self, key, value)
+    end)
+    setreadonly(mt, true)
 
-    if ESPObjects[Player] then
+    hum.WalkSpeed = realSpeed
+    print("[Zpekeno] Speed spoof:", realSpeed, "->", fakeSpeed)
+end
 
-        ESPObjects[Player]:Destroy()
-        ESPObjects[Player] = nil
+function Bypass.SafeTeleport(targetCFrame, steps, duration)
+    steps = steps or 10
+    duration = duration or 0.15
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
 
+    local start = root.CFrame
+    for i = 1, steps do
+        local a = i / steps
+        root.CFrame = start:Lerp(targetCFrame, a)
+        task.wait(duration / steps)
     end
 end
 
-local function CreateESP(Player)
+function Bypass.SafeDash(direction, speed)
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
 
-    if Player == LocalPlayer then
-        return
-    end
-
-    if not Player.Character then
-        return
-    end
-
-    RemoveESP(Player)
-
-    local Highlight = Instance.new("Highlight")
-
-    Highlight.Name = "ZpeKenoESP"
-    Highlight.FillTransparency = 1
-    Highlight.OutlineTransparency = 0
-    Highlight.OutlineColor =
-        Color3.fromRGB(0, 255, 100)
-
-    Highlight.DepthMode =
-        Enum.HighlightDepthMode.AlwaysOnTop
-
-    Highlight.Parent = Player.Character
-
-    ESPObjects[Player] = Highlight
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(1e5, 0, 1e5)
+    bv.Velocity = direction * speed
+    bv.Name = "Velocity"
+    bv.Parent = root
+    task.wait(0.15)
+    if bv and bv.Parent then bv:Destroy() end
 end
 
-local function ClearESP()
-
-    for Player in pairs(ESPObjects) do
-        RemoveESP(Player)
-    end
-
+function Bypass.CleanClientChecks()
+    pcall(function()
+        local env = getfenv(0)
+        local keys = {}
+        for k in pairs(env) do
+            local s = tostring(k):lower()
+            if s:find("anticheat") or s:find("detection") or s:find("bfcheck") then
+                table.insert(keys, k)
+            end
+        end
+        for _, k in pairs(keys) do env[k] = nil end
+    end)
+    print("[Zpekeno] Client checks limpos.")
 end
 
-local function UpdateESP()
+function Bypass.ProtectExecutor()
+    pcall(function()
+        local env = getfenv(0)
+        env.getgenv = nil
+        env.getrawmetatable = nil
+        env.setreadonly = nil
+        env.newcclosure = nil
+    end)
+end
 
-    if not Config.ESP then
+function Bypass.Init(settings)
+    settings = settings or {}
+    Bypass.BlockTelemetry()
+    Bypass.CleanClientChecks()
+    Bypass.ProtectExecutor()
+    Bypass.SpeedSpoof(settings.RealSpeed or 50, settings.FakeSpeed or 16)
+    print("[Zpekeno] Bypass carregado.")
+end
 
-        ClearESP()
-        return
+--==============================================================
+-- SEA DETECTION
+--==============================================================
+local Sea = {}
 
+function Sea.GetCurrentSea()
+    local plr = game.Players.LocalPlayer
+    if not plr then return nil end
+    local ok, data = pcall(function() return plr.Data.Level.Value end)
+    local level = ok and data or 1
+    if level >= 1500 then return "Third" end
+    if level >= 700 then return "Second" end
+    return "First"
+end
+
+function Sea.GetIslandID(name)
+    local sea = Sea.GetCurrentSea()
+    if not sea then return nil end
+    local data = Config.SeaIDs[sea]
+    for n, id in pairs(data.islands) do
+        if n:lower():find(name:lower()) then return id, n end
+    end
+    return nil
+end
+
+function Sea.GetMobID(name)
+    local sea = Sea.GetCurrentSea()
+    if not sea then return nil end
+    local data = Config.SeaIDs[sea]
+    for n, id in pairs(data.mobIDs) do
+        if n:lower():find(name:lower()) then return id, n end
+    end
+    return nil
+end
+
+function Sea.GetAllIslands()
+    local sea = Sea.GetCurrentSea()
+    if not sea then return {} end
+    return Config.SeaIDs[sea].islands
+end
+
+function Sea.GetAllMobs()
+    local sea = Sea.GetCurrentSea()
+    if not sea then return {} end
+    return Config.SeaIDs[sea].mobIDs
+end
+
+function Sea.GetLevelRange()
+    local sea = Sea.GetCurrentSea()
+    if not sea then return nil end
+    return Config.SeaIDs[sea].levels
+end
+
+--==============================================================
+-- VISUAL (ESP)
+--==============================================================
+local Visual = {}
+local drawings = {}
+
+function Visual.CreateESP(target)
+    local plr = game.Players.LocalPlayer
+    if target == plr and Config.Settings.Visual.ExcludeLocal then return end
+    if drawings[target] then return end
+    local char = target.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "Zpekeno_ESP"
+    billboard.Size = UDim2.new(0, 200, 0, 100)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Adornee = root
+    billboard.Parent = root
+
+    if Config.Settings.Visual.PlayerOutline then
+        local hl = Instance.new("Highlight")
+        hl.Name = "SelectionBox"
+        hl.FillColor = Config.Settings.Visual.OutlineColor
+        hl.OutlineColor = Config.Settings.Visual.OutlineColor
+        hl.FillTransparency = 0.7
+        hl.OutlineTransparency = 0
+        hl.Parent = char
     end
 
-    for _, Player in ipairs(Players:GetPlayers()) do
+    if Config.Settings.Visual.HealthPercent then
+        local lbl = Instance.new("TextLabel")
+        lbl.Name = "Health"
+        lbl.Size = UDim2.new(1, 0, 0.3, 0)
+        lbl.Position = UDim2.new(0, 0, 0, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+        lbl.TextStrokeTransparency = 0
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextScaled = true
+        lbl.Text = "100%"
+        lbl.Parent = billboard
+    end
 
-        if Player ~= LocalPlayer
-            and Player.Character then
+    if Config.Settings.Visual.Distance then
+        local lbl = Instance.new("TextLabel")
+        lbl.Name = "Distance"
+        lbl.Size = UDim2.new(1, 0, 0.3, 0)
+        lbl.Position = UDim2.new(0, 0, 0.3, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
+        lbl.TextStrokeTransparency = 0
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextScaled = true
+        lbl.Text = "0m"
+        lbl.Parent = billboard
+    end
 
-            CreateESP(Player)
+    drawings[target] = billboard
+end
 
+function Visual.RemoveESP(target)
+    if drawings[target] then
+        drawings[target]:Destroy()
+        drawings[target] = nil
+    end
+    local char = target.Character
+    if char then
+        local h = char:FindFirstChild("SelectionBox")
+        if h then h:Destroy() end
+    end
+end
+
+function Visual.Update()
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    for target, gui in pairs(drawings) do
+        local tchar = target.Character
+        if not tchar then
+            Visual.RemoveESP(target)
+        else
+            local troot = tchar:FindFirstChild("HumanoidRootPart")
+            local thum = tchar:FindFirstChildOfClass("Humanoid")
+            if not troot or not thum then
+                Visual.RemoveESP(target)
+            else
+                local dist = (troot.Position - root.Position).Magnitude
+                if Config.Settings.Visual.HealthPercent then
+                    local hp = gui:FindFirstChild("Health")
+                    if hp then hp.Text = math.floor((thum.Health / thum.MaxHealth) * 100) .. "%" end
+                end
+                if Config.Settings.Visual.Distance then
+                    local dl = gui:FindFirstChild("Distance")
+                    if dl then dl.Text = math.floor(dist) .. "m" end
+                end
+            end
         end
     end
 end
 
---========================================================--
--- CHARACTER
---========================================================--
+function Visual.StartLoop()
+    task.spawn(function()
+        while task.wait(0.1) do Visual.Update() end
+    end)
+end
 
-local function UpdateCharacter()
-
-    local Character =
-        LocalPlayer.Character
-
-    if not Character then
-        return
-    end
-
-    local Humanoid =
-        Character:FindFirstChildOfClass(
-            "Humanoid"
-        )
-
-    if not Humanoid then
-        return
-    end
-
-    if Config.Speed then
-        Humanoid.WalkSpeed =
-            Config.SpeedValue
-    else
-        Humanoid.WalkSpeed = 16
-    end
-
-    if Config.Jump then
-
-        Humanoid.UseJumpPower = true
-        Humanoid.JumpPower =
-            Config.JumpValue
-
-    else
-
-        Humanoid.UseJumpPower = true
-        Humanoid.JumpPower = 50
-
+function Visual.RefreshAll()
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= game.Players.LocalPlayer then Visual.CreateESP(plr) end
     end
 end
 
---========================================================--
--- AIMBOT PAGE
---========================================================--
+--==============================================================
+-- AIMBOT
+--==============================================================
+local Aimbot = {}
+local currentTarget = nil
 
-local function ShowAimbot()
+function Aimbot.GetClosestTarget()
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return nil end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
 
-    ClearContent()
-
-    CreateSection(
-        "AIMBOT",
-        "Authorized target assistance"
-    )
-
-    CreateToggle(
-        "Target Assist",
-        Config.AimAssist,
-        function(Value)
-
-            Config.AimAssist = Value
-
+    local closest, minDist = nil, Config.Settings.Aimbot.TargetDistance.max
+    for _, target in pairs(game.Players:GetPlayers()) do
+        if target == plr then continue end
+        if Config.Settings.Aimbot.TeamFilter and target.Team == plr.Team then continue end
+        local tc = target.Character
+        if tc then
+            local tr = tc:FindFirstChild("HumanoidRootPart")
+            local th = tc:FindFirstChildOfClass("Humanoid")
+            if tr and th and th.Health > 0 then
+                local d = (tr.Position - root.Position).Magnitude
+                if d >= Config.Settings.Aimbot.TargetDistance.min and d < minDist then
+                    minDist = d
+                    closest = target
+                end
+            end
         end
-    )
+    end
+    return closest
+end
 
-    CreateSlider(
-        "Target Distance",
-        100,
-        1000,
-        Config.AimDistance,
-        function(Value)
+function Aimbot.PredictPosition(target)
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return nil end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    local tc = target.Character
+    if not tc then return nil end
+    local tr = tc:FindFirstChild("HumanoidRootPart")
+    if not tr then return nil end
+
+    local dist = (tr.Position - root.Position).Magnitude
+    local speed = 100
+    local pred = Config.Settings.Aimbot.Prediction / 100
+    local travel = dist / speed
+    return tr.Position + (tr.AssemblyLinearVelocity * travel * pred)
+end
+
+function Aimbot.Start()
+    task.spawn(function()
+        while task.wait(0.05) do
+            if Config.Settings.Aimbot.TargetAssist then
+                local target = Aimbot.GetClosestTarget()
+                if target then
+                    currentTarget = target
+                    local predPos = Aimbot.PredictPosition(target)
+                    if predPos then
+                        local cam = workspace.CurrentCamera
+                        if cam then
+                            local goal = CFrame.new(cam.CFrame.Position, predPos)
+                            cam.CFrame = cam.CFrame:Lerp(goal, Config.Settings.Aimbot.Smoothness)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function Aimbot.GetTarget() return currentTarget end
+
+--==============================================================
+-- OTHER (Dash / Speed / Jump)
+--==============================================================
+local Other = {}
+
+function Other.SetSpeed(speed)
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = speed end
+end
+
+function Other.SetJump(jump)
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.JumpPower = jump; hum.UseJumpPower = true end
+end
+
+function Other.Dash()
+    if not Config.Settings.Other.DashEnabled then return end
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not root or not hum then return end
+    local dir = hum.MoveDirection
+    if dir.Magnitude < 0.1 then dir = root.CFrame.LookVector end
+    Bypass.SafeDash(dir, Config.Settings.Other.Dash)
+end
+
+function Other.TeleportTo(cframe)
+    Bypass.SafeTeleport(cframe, Config.Settings.Bypass.TeleportSteps, Config.Settings.Bypass.TeleportDuration)
+end
+
+function Other.StartAutoApply()
+    task.spawn(function()
+        while task.wait(0.5) do
+            Other.SetSpeed(Config.Settings.Other.MovementSpeed)
+            Other.SetJump(Config.Settings.Other.JumpHeight)
+        end
+    end)
+end
+
+--==============================================================
+-- UI
+--==============================================================
+local UI = {}
+local UIS = game:GetService("UserInputService")
+
+local COLORS = {
+    bg      = Color3.fromRGB(8, 10, 16),
+    panel   = Color3.fromRGB(18, 22, 32),
+    card    = Color3.fromRGB(22, 27, 38),
+    accent  = Color3.fromRGB(0, 170, 255),
+    text    = Color3.fromRGB(235, 238, 245),
+    subtext = Color3.fromRGB(130, 140, 160),
+    off     = Color3.fromRGB(45, 50, 65),
+    success = Color3.fromRGB(0, 230, 120),
+    border  = Color3.fromRGB(35, 42, 58),
+}
+
+local function makeFrame(p) local f = Instance.new("Frame"); f.Active = true; f.BorderSizePixel = 0; for k,v in pairs(p) do f[k]=v end; return f end
+local function makeButton(p) local b = Instance.new("TextButton"); b.Active = true; b.AutoButtonColor = false; b.BorderSizePixel = 0; b.Text = ""; b.Font = Enum.Font.Gotham; for k,v in pairs(p) do b[k]=v end; return b end
+local function makeLabel(p) local l = Instance.new("TextLabel"); l.BackgroundTransparency = 1; l.Font = Enum.Font.Gotham; l.TextColor3 = COLORS.text; l.ZIndex = 2; for k,v in pairs(p) do l[k]=v end; return l end
+local function round(o,r) local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0,r or 8); c.Parent = o; return c end
+local function stroke(o,c,t,tr) local s = Instance.new("UIStroke"); s.Color = c or COLORS.border; s.Thickness = t or 1; s.Transparency = tr or 0; s.Parent = o; return s end
+
+function UI.Build()
+    local plr = game.Players.LocalPlayer
+    local pg = plr:WaitForChild("PlayerGui")
+    local old = pg:FindFirstChild("ZpekenoUI")
+    if old then old:Destroy() end
+
+    local screen = Instance.new("ScreenGui")
+    screen.Name = "ZpekenoUI"
+    screen.ResetOnSpawn = false
+    screen.IgnoreGuiInset = true
+    screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screen.DisplayOrder = 999
+    screen.Parent = pg
+
+    local function getScale()
+        local cam = workspace.CurrentCamera
+        local vp = cam and cam.ViewportSize or Vector2.new(1920,1080)
+        local isMobile = UIS.TouchEnabled and not UIS.KeyboardEnabled
+        local isTablet = UIS.TouchEnabled and UIS.KeyboardEnabled
+        local isPortrait = vp.Y > vp.X
+        if isMobile then return isPortrait and 0.55 or 0.65
+        elseif isTablet then return 0.85
+        else
+            if vp.X < 1366 then return 0.85 end
+            if vp.X < 1920 then return 1.0 end
+            return 1.1
+        end
+    end
+
+    local zBtn = makeButton({
+        Name = "ZButton", Size = UDim2.new(0,52,0,52), Position = UDim2.new(0,18,0,18),
+        BackgroundColor3 = COLORS.bg, Parent = screen, ZIndex = 20,
+    })
+    round(zBtn, 14); stroke(zBtn, COLORS.accent, 2, 0)
+    makeLabel({
+        Text = "Z", Font = Enum.Font.GothamBlack, TextSize = 28, TextColor3 = COLORS.accent,
+        Size = UDim2.new(1,0,1,0), TextXAlignment = Enum.TextXAlignment.Center,
+        TextYAlignment = Enum.TextYAlignment.Center, ZIndex = 21, Parent = zBtn,
+    })
+
+    local main = makeFrame({
+        Name = "Main", Size = UDim2.new(0,800,0,500), Position = UDim2.new(0.5,-400,0.5,-250),
+        BackgroundColor3 = COLORS.bg, Parent = screen, ZIndex = 10,
+    })
+    round(main, 14); stroke(main, COLORS.border, 1, 0.3)
+
+    local uiScale = Instance.new("UIScale")
+    uiScale.Scale = getScale()
+    uiScale.Parent = main
+
+    local cam = workspace.CurrentCamera
+    if cam then
+        cam:GetPropertyChangedSignal("ViewportSize"):Connect(function() uiScale.Scale = getScale() end)
+    end
+    UIS:GetPropertyChangedSignal("TouchEnabled"):Connect(function() uiScale.Scale = getScale() end)
+
+    zBtn.MouseButton1Click:Connect(function() main.Visible = not main.Visible end)
+
+    local header = makeButton({
+        Name = "Header", Size = UDim2.new(1,0,0,56), Position = UDim2.new(0,0,0,0),
+        BackgroundColor3 = COLORS.bg, Parent = main, ZIndex = 11,
+    })
+    round(header, 14)
+
+    makeLabel({Text="Z",Font=Enum.Font.GothamBlack,TextSize=32,TextColor3=COLORS.text,Size=UDim2.new(0,42,1,0),Position=UDim2.new(0,18,0,0),TextYAlignment=Enum.TextYAlignment.Center,ZIndex=12,Parent=header})
+    makeLabel({Text="ZpeKeno",Font=Enum.Font.GothamBold,TextSize=20,TextColor3=COLORS.text,Size=UDim2.new(0,200,0,26),Position=UDim2.new(0,66,0,8),ZIndex=12,Parent=header})
+    makeLabel({Text="GAME DEVELOPMENT HUB",TextSize=10,TextColor3=COLORS.subtext,Size=UDim2.new(0,200,0,14),Position=UDim2.new(0,66,0,32),ZIndex=12,Parent=header})
+    makeLabel({Text="/ BETTER TOOLS\n/ BIGGER IDEAS",TextSize=10,TextColor3=COLORS.subtext,Size=UDim2.new(0,180,0,30),Position=UDim2.new(1,-290,0.5,-15),TextXAlignment=Enum.TextXAlignment.Right,TextYAlignment=Enum.TextYAlignment.Center,ZIndex=12,Parent=header})
+
+    local close = makeButton({
+        Size=UDim2.new(0,32,0,32),Position=UDim2.new(1,-46,0.5,-16),
+        BackgroundColor3=COLORS.panel,Parent=header,ZIndex=13,
+    })
+    round(close,8); stroke(close,COLORS.border,1,0)
+    makeLabel({Text="X",Font=Enum.Font.GothamBold,Size=UDim2.new(1,0,1,0),TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,TextSize=14,ZIndex=14,Parent=close})
+    close.MouseButton1Click:Connect(function() screen.Enabled = false end)
+
+    local body = makeFrame({
+        Name="Body", Size=UDim2.new(1,0,1,-56), Position=UDim2.new(0,0,0,56),
+        BackgroundTransparency=1, Parent=main, ZIndex=11,
+    })
+
+    local tabBar = makeFrame({
+        Size=UDim2.new(1,-24,0,42), Position=UDim2.new(0,12,0,10),
+        BackgroundColor3=COLORS.panel, Parent=body, ZIndex=12,
+    })
+    round(tabBar,10); stroke(tabBar,COLORS.border,1,0.5)
+
+    local contentHolder = makeFrame({
+        Size=UDim2.new(1,-24,1,-74), Position=UDim2.new(0,12,0,62),
+        BackgroundTransparency=1, Parent=body, ZIndex=12,
+    })
+
+    local statusDot = makeFrame({
+        Name="StatusDot", Size=UDim2.new(0,8,0,8), Position=UDim2.new(0,14,1,-22),
+        BackgroundColor3=COLORS.success, Parent=body, ZIndex=15,
+    })
+    round(statusDot,4)
+    makeLabel({Text="System Ready\nv"..Config.Version,TextSize=9,TextColor3=COLORS.subtext,Size=UDim2.new(0,120,0,24),Position=UDim2.new(0,28,1,-30),TextYAlignment=Enum.TextYAlignment.Center,ZIndex=15,Parent=body})
+
+    local tabs = {
+        {id="AIMBOT",label="AIMBOT",icon="◎"},
+        {id="VISUAL",label="VISUAL",icon="◉"},
+        {id="OTHER",label="OTHER",icon="⚙"},
+    }
+    local tabButtons = {}
+    local tabContent = {}
+
+    for i, tab in ipairs(tabs) do
+        local btn = makeButton({
+            Name=tab.id, Size=UDim2.new(1/3,-6,1,-8), Position=UDim2.new((i-1)/3,3,0,4),
+            BackgroundColor3=COLORS.panel, Parent=tabBar, ZIndex=13,
+        })
+        round(btn,8); stroke(btn,COLORS.border,1,1)
+
+        local iconLbl = makeLabel({Text=tab.icon,Font=Enum.Font.GothamBold,TextSize=14,TextColor3=COLORS.subtext,Size=UDim2.new(0,24,1,0),Position=UDim2.new(0,10,0,0),TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,ZIndex=14,Parent=btn})
+        local nameLbl = makeLabel({Text=tab.label,Font=Enum.Font.GothamBold,TextSize=13,TextColor3=COLORS.subtext,Size=UDim2.new(1,-34,1,0),Position=UDim2.new(0,34,0,0),TextYAlignment=Enum.TextYAlignment.Center,ZIndex=14,Parent=btn})
+
+        local content = makeFrame({
+            Name=tab.id.."_Content", Size=UDim2.new(1,0,1,0), BackgroundTransparency=1,
+            Visible=(i==1), Parent=contentHolder, ZIndex=13,
+        })
+        tabContent[tab.id] = content
+        tabButtons[tab.id] = {btn=btn, icon=iconLbl, label=nameLbl, stroke=btn:FindFirstChildOfClass("UIStroke")}
+
+        btn.MouseButton1Click:Connect(function()
+            for n, t in pairs(tabContent) do t.Visible = (n == tab.id) end
+            for n, b in pairs(tabButtons) do
+                local active = (n == tab.id)
+                b.btn.BackgroundColor3 = active and COLORS.accent or COLORS.panel
+                b.icon.TextColor3 = active and Color3.fromRGB(255,255,255) or COLORS.subtext
+                b.label.TextColor3 = active and Color3.fromRGB(255,255,255) or COLORS.subtext
+                b.stroke.Transparency = active and 0 or 1
+                b.stroke.Color = active and COLORS.accent or COLORS.border
+            end
+        end)
+    end
+    tabButtons["AIMBOT"].btn.BackgroundColor3 = COLORS.accent
+    tabButtons["AIMBOT"].icon.TextColor3 = Color3.fromRGB(255,255,255)
+    tabButtons["AIMBOT"].label.TextColor3 = Color3.fromRGB(255,255,255)
+    tabButtons["AIMBOT"].stroke.Transparency = 0
+    tabButtons["AIMBOT"].stroke.Color = COLORS.accent
+
+    local function makeCard(parent, title, subtitle, icon, widthScale, xPos)
+        local card = makeFrame({
+            Size = widthScale or UDim2.new(1,-8,1,0),
+            Position = xPos or UDim2.new(0,0,0,0),
+            BackgroundColor3 = COLORS.card, Parent = parent, ZIndex = 14,
+        })
+        round(card,10)
+        stroke(card,COLORS.border,1,0.6)
+        makeLabel({Text=(icon or "◆").."  "..title,Font=Enum.Font.GothamBold,TextSize=14,TextColor3=COLORS.text,Size=UDim2.new(1,-20,0,22),Position=UDim2.new(0,12,0,12),ZIndex=15,Parent=card})
+        makeLabel({Text=subtitle or "",TextSize=10,TextColor3=COLORS.subtext,Size=UDim2.new(1,-20,0,14),Position=UDim2.new(0,12,0,38),ZIndex=15,Parent=card})
+        local rowHolder = makeFrame({
+            Size = UDim2.new(1,-16,1,-66), Position = UDim2.new(0,8,0,56),
+            BackgroundTransparency = 1, Parent = card, ZIndex = 15,
+        })
+        return rowHolder
+    end
+
+    local function addToggleRow(parent, labelText, subText, state, callback)
+        local count = 0
+        for _ in pairs(parent:GetChildren()) do count = count + 1 end
+        local row = makeButton({
+            Size=UDim2.new(1,0,0,44), BackgroundColor3=COLORS.card,
+            Position=UDim2.new(0,0,0,count*48), Parent=parent, ZIndex=16,
+        })
+        round(row,6)
+        makeLabel({Text=labelText,Font=Enum.Font.GothamBold,TextSize=12,TextColor3=COLORS.text,Size=UDim2.new(1,-70,0,16),Position=UDim2.new(0,10,0,6),ZIndex=17,Parent=row})
+        if subText then
+            makeLabel({Text=subText,TextSize=9,TextColor3=COLORS.subtext,Size=UDim2.new(1,-70,0,12),Position=UDim2.new(0,10,0,22),ZIndex=17,Parent=row})
+        end
+        local sw = makeFrame({
+            Size=UDim2.new(0,40,0,20), Position=UDim2.new(1,-50,0.5,-10),
+            BackgroundColor3=state and COLORS.accent or COLORS.off, Parent=row, ZIndex=17,
+        })
+        round(sw,10)
+        local knob = makeFrame({
+            Size=UDim2.new(0,16,0,16),
+            Position=state and UDim2.new(1,-18,0,2) or UDim2.new(0,2,0,2),
+            BackgroundColor3=Color3.fromRGB(255,255,255), Parent=sw, ZIndex=18,
+        })
+        round(knob,8)
+        row.MouseButton1Click:Connect(function()
+            state = not state
+            callback(state)
+            sw.BackgroundColor3 = state and COLORS.accent or COLORS.off
+            knob.Position = state and UDim2.new(1,-18,0,2) or UDim2.new(0,2,0,2)
+        end)
+    end
+
+    local function addSliderRow(parent, labelText, subText, minVal, maxVal, defaultVal, callback)
+        local count = 0
+        for _ in pairs(parent:GetChildren()) do count = count + 1 end
+        local row = makeFrame({
+            Size=UDim2.new(1,0,0,62), BackgroundColor3=COLORS.card,
+            Position=UDim2.new(0,0,0,count*66), Parent=parent, ZIndex=16,
+        })
+        round(row,6)
+        makeLabel({Text=labelText,Font=Enum.Font.GothamBold,TextSize=12,TextColor3=COLORS.text,Size=UDim2.new(0,160,0,16),Position=UDim2.new(0,10,0,6),ZIndex=17,Parent=row})
+        if subText then
+            makeLabel({Text=subText,TextSize=9,TextColor3=COLORS.subtext,Size=UDim2.new(0,200,0,12),Position=UDim2.new(0,10,0,22),ZIndex=17,Parent=row})
+        end
+        local badge = makeFrame({
+            Size=UDim2.new(0,80,0,18), Position=UDim2.new(1,-90,0,8),
+            BackgroundColor3=COLORS.panel, Parent=row, ZIndex=17,
+        })
+        round(badge,4); stroke(badge,COLORS.border,1,0.5)
+        local badgeLbl = makeLabel({
+            Text=defaultVal.." - "..maxVal, Font=Enum.Font.GothamBold, TextSize=10,
+            TextColor3=COLORS.text, Size=UDim2.new(1,0,1,0),
+            TextXAlignment=Enum.TextXAlignment.Center, TextYAlignment=Enum.TextYAlignment.Center,
+            ZIndex=18, Parent=badge,
+        })
+        local track = makeFrame({
+            Size=UDim2.new(1,-20,0,6), Position=UDim2.new(0,10,0,42),
+            BackgroundColor3=COLORS.off, Parent=row, ZIndex=17,
+        })
+        round(track,3)
+        local fill = makeFrame({
+            Size=UDim2.new((defaultVal-minVal)/(maxVal-minVal),0,1,0),
+            BackgroundColor3=COLORS.accent, Parent=track, ZIndex=18,
+        })
+        round(fill,3)
+        local thumb = makeFrame({
+            Size=UDim2.new(0,14,0,14),
+            Position=UDim2.new((defaultVal-minVal)/(maxVal-minVal),-7,0.5,-7),
+            BackgroundColor3=Color3.fromRGB(255,255,255), Parent=track, ZIndex=19,
+        })
+        round(thumb,7)
+        makeLabel({Text=tostring(minVal),TextSize=9,TextColor3=COLORS.subtext,Size=UDim2.new(0,30,0,12),Position=UDim2.new(0,10,0,50),ZIndex=17,Parent=row})
+        makeLabel({Text=tostring(maxVal),TextSize=9,TextColor3=COLORS.subtext,Size=UDim2.new(0,30,0,12),Position=UDim2.new(1,-40,0,50),TextXAlignment=Enum.TextXAlignment.Right,ZIndex=17,Parent=row})
+        local dragging = false
+        local function updateSlider(input)
+            local trackAbs = track.AbsolutePosition
+            local trackSize = track.AbsoluteSize
+            local rel = math.clamp((input.Position.X - trackAbs.X) / trackSize.X, 0, 1)
+            local val = math.floor(minVal + (maxVal - minVal) * rel)
+            fill.Size = UDim2.new(rel, 0, 1, 0)
+            thumb.Position = UDim2.new(rel, -7, 0.5, -7)
+            badgeLbl.Text = val .. " - " .. maxVal
+            callback(val)
+        end
+        track.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                updateSlider(input)
+            end
+        end)
+        UIS.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                updateSlider(input)
+            end
+        end)
+        UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
+    end
+
+    -- AIMBOT TAB
+    local aimContent = tabContent["AIMBOT"]
+    local col1 = makeCard(aimContent, "AIMBOT", "Target assistance and smart tracking.", "◎", UDim2.new(1/3,-8,1,0), UDim2.new(0,0,0,0))
+    addToggleRow(col1, "Target Assist", "Auto lock and follow target.", Config.Settings.Aimbot.TargetAssist, function(v) Config.Settings.Aimbot.TargetAssist = v end)
+    addSliderRow(col1, "Target Distance", "Range to find targets.", 100, 1000, 500, function(v) Config.Settings.Aimbot.TargetDistance.max = v end)
+    addSliderRow(col1, "Prediction", "Adjusts target prediction.", 1, 100, 50, function(v) Config.Settings.Aimbot.Prediction = v end)
+    addToggleRow(col1, "Team Filter", "Ignore allies and focus on enemies.", Config.Settings.Aimbot.TeamFilter, function(v) Config.Settings.Aimbot.TeamFilter = v end)
+
+    local col2 = makeCard(aimContent, "VISUAL", "Player information and highlighting.", "◉", UDim2.new(1/3,-8,1,0), UDim2.new(1/3,4,0,0))
+    addToggleRow(col2, "Player Outline", "Show outline for valid players.", Config.Settings.Visual.PlayerOutline, function(v) Config.Settings.Visual.PlayerOutline = v end)
+    addToggleRow(col2, "Health %", "Display player health percentage.", Config.Settings.Visual.HealthPercent, function(v) Config.Settings.Visual.HealthPercent = v end)
+    addToggleRow(col2, "Distance", "Show distance to players.", Config.Settings.Visual.Distance, function(v) Config.Settings.Visual.Distance = v end)
+    addToggleRow(col2, "Exclude Local Player", "Don't show your own character.", Config.Settings.Visual.ExcludeLocal, function(v) Config.Settings.Visual.ExcludeLocal = v end)
+
+    local col3 = makeCard(aimContent, "OTHER", "Character and movement adjustments.", "⚙", UDim2.new(1/3,-8,1,0), UDim2.new(2/3,8,0,0))
+    addSliderRow(col3, "Dash", "Increase dash distance/speed.", 5, 50, Config.Settings.Other.Dash, function(v) Config.Settings.Other.Dash = v end)
+    addSliderRow(col3, "Movement Speed", "Adjust player movement speed.", 5, 100, Config.Settings.Other.MovementSpeed, function(v) Config.Settings.Other.MovementSpeed = v end)
+    addSliderRow(col3, "Jump Height", "Increase jump height.", 5, 50, Config.Settings.Other.JumpHeight, function(v) Config.Settings.Other.JumpHeight = v end)
+
+    -- VISUAL TAB
+    local visContent = tabContent["VISUAL"]
+    local visCol = makeCard(visContent, "VISUAL", "Player information and highlighting.", "◉", UDim2.new(1,0,1,0), UDim2.new(0,0,0,0))
+    addToggleRow(visCol, "Player Outline", "Show outline for valid players.", Config.Settings.Visual.PlayerOutline, function(v) Config.Settings.Visual.PlayerOutline = v end)
+    addToggleRow(visCol, "Health %", "Display player health percentage.", Config.Settings.Visual.HealthPercent, function(v) Config.Settings.Visual.HealthPercent = v end)
+    addToggleRow(visCol, "Distance", "Show distance to players.", Config.Settings.Visual.Distance, function(v) Config.Settings.Visual.Distance = v end)
+    addToggleRow(visCol, "Exclude Local Player", "Don't show your own character.", Config.Settings.Visual.ExcludeLocal, function(v) Config.Settings.Visual.ExcludeLocal = v end)
+
+    -- OTHER TAB
+    local otherContent = tabContent["OTHER"]
+    local otherCol = makeCard(otherContent, "OTHER", "Character and movement adjustments.", "⚙", UDim2.new(1,0,1,0), UDim2.new(0,0,0,0))
+    addToggleRow(otherCol, "Dash Enabled", "Toggle dash on/off.", Config.Settings.Other.DashEnabled, function(v) Config.Settings.Other.DashEnabled = v end)
+    addSliderRow(otherCol, "Dash", "Increase dash distance/speed.", 5, 50, Config.Settings.Other.Dash, function(v) Config.Settings.Other.Dash = v end)
+    addSliderRow(otherCol, "Movement Speed", "Adjust player movement speed.", 5, 100, Config.Settings.Other.MovementSpeed, function(v) Config.Settings.Other.MovementSpeed = v end)
+    addSliderRow(otherCol, "Jump Height", "Increase jump height.", 5, 50, Config.Settings.Other.JumpHeight, function(v) Config.Settings.Other.JumpHeight = v end)
+
+    -- drag
+    local dragging, dragStart, startPos
+    local function beginDrag(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = main.Position
+        end
+    end
+    local function updateDrag(input)
+        if not dragging then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    local function endDrag(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end
+    header.InputBegan:Connect(beginDrag)
+    header.InputChanged:Connect(updateDrag)
+    header.InputEnded:Connect(endDrag)
+    UIS.InputChanged:Connect(updateDrag)
+    UIS.InputEnded:Connect(endDrag)
+
+    local cam2 = workspace.CurrentCamera
+    if cam2 then
+        local vp = cam2.ViewportSize
+        local scale = getScale()
+        local w = 800 * scale
+        local h = 500 * scale
+        main.Position = UDim2.new(0, math.max(10, (vp.X - w) / 2), 0, math.max(10, (vp.Y - h) / 2))
+    end
+
+    print("[Zpekeno] UI carregada.")
+    return screen
+end
+
+--==============================================================
+-- INIT / LOADER
+--==============================================================
+local Zpekeno = {}
+
+function Zpekeno.Start()
+    Bypass.Init(Config.Settings.Bypass)
+    Visual.RefreshAll()
+    game.Players.PlayerAdded:Connect(function(p)
+        p.CharacterAdded:Connect(function()
+            task.wait(1)
+            Visual.CreateESP(p)
+        end)
+    end)
+    Visual.StartLoop()
+    Aimbot.Start()
+    Other.StartAutoApply()
+    UI.Build()
+
+    getgenv().Zpekeno = {
+        Config   = Config.Settings,
+        Sea      = Sea,
+        Visual   = Visual,
+        Aimbot   = Aimbot,
+        Other    = Other,
+        Bypass   = Bypass,
+        UI       = UI,
+        Version  = Config.Version,
+    }
+
+    print("[Zpekeno] ============================")
+    print("[Zpekeno]  ZpeKeno v" .. Config.Version)
+    print("[Zpekeno]  Game Development Hub")
+    print("[Zpekeno]  Better Tools / Bigger Ideas")
+    print("[Zpekeno]  Sea detectada: " .. tostring(Sea.GetCurrentSea()))
+    print("[Zpekeno] ============================")
+end
+
+Zpekeno.Start()
+
+return Zpekeno
